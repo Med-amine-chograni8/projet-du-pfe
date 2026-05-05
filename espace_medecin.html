@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MediRendez – Espace Médecin</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="nav-placeholder"></div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-who">
+      <div style="width:38px;height:38px;border-radius:50%;background:#0ea5e9;color:#fff;font-weight:800;font-size:.85rem;display:flex;align-items:center;justify-content:center;margin-bottom:8px">KM</div>
+      <div class="sb-who-name">Dr. K. Mansouri</div>
+      <div class="sb-who-role">Cardiologue</div>
+    </div>
+    <a class="sb-item active" id="sb-board"     onclick="sw('board',this)">📊 Tableau de bord</a>
+    <a class="sb-item"        id="sb-creneaux"  onclick="sw('creneaux',this)">⏰ Créneaux</a>
+    <a class="sb-item"        id="sb-rdv"       onclick="sw('rdv',this)">📅 Rendez-vous</a>
+    <a class="sb-item"        id="sb-patients"  onclick="sw('patients',this)">👥 Patients</a>
+  </div>
+
+  <div class="sb-content">
+
+    <!-- TABLEAU DE BORD -->
+    <div id="pnl-board" class="pnl active">
+      <p class="ptitle">Tableau de bord</p>
+      <p class="psub">Dimanche 20 Avril 2026</p>
+
+      <div class="stats4">
+        <div class="stat-box"><div class="stat-ico">📅</div><div><div class="stat-num">8</div><div class="stat-lbl">RDV aujourd'hui</div></div></div>
+        <div class="stat-box"><div class="stat-ico">⏳</div><div><div class="stat-num">3</div><div class="stat-lbl">En attente</div></div></div>
+        <div class="stat-box"><div class="stat-ico">👥</div><div><div class="stat-num">142</div><div class="stat-lbl">Patients</div></div></div>
+        <div class="stat-box"><div class="stat-ico">✗</div><div><div class="stat-num">2</div><div class="stat-lbl">Annulés</div></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">RDV du jour</div>
+        <div class="card-body" style="padding:0">
+          <div class="tbl-wrap">
+            <table class="tbl" id="rdv-jour-tbl">
+              <thead><tr><th>Heure</th><th>Patient</th><th>Motif</th><th>Statut</th><th>Action</th></tr></thead>
+              <tbody id="rdv-jour-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CRÉNEAUX -->
+    <div id="pnl-creneaux" class="pnl">
+      <p class="ptitle">Gestion des Créneaux</p>
+      <p class="psub">Définissez vos disponibilités hebdomadaires</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="card">
+          <div class="card-head">Ajouter un créneau</div>
+          <div class="card-body">
+            <div class="field"><label>Jour</label>
+              <select id="cr-jour"><option>Lundi</option><option>Mardi</option><option>Mercredi</option><option>Jeudi</option><option>Vendredi</option></select>
+            </div>
+            <div class="row2">
+              <div class="field"><label>Heure début</label><input type="time" id="cr-debut" value="09:00"></div>
+              <div class="field"><label>Heure fin</label><input type="time" id="cr-fin" value="12:00"></div>
+            </div>
+            <div class="field"><label>Durée / consultation</label>
+              <select id="cr-duree"><option>15 min</option><option selected>30 min</option><option>45 min</option><option>1 heure</option></select>
+            </div>
+            <button class="btn btn-blue" onclick="addCreneau()">+ Ajouter</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">Créneaux existants</div>
+          <div class="card-body" style="padding:0">
+            <table class="tbl">
+              <thead><tr><th>Jour</th><th>Horaire</th><th>Durée</th><th></th></tr></thead>
+              <tbody id="creneaux-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RDV MÉDECIN -->
+    <div id="pnl-rdv" class="pnl">
+      <p class="ptitle">Mes Rendez-vous</p>
+      <div class="search-row">
+        <input type="text" placeholder="🔍 Rechercher un patient…" oninput="filterMedRdv(this.value)">
+        <select onchange="filterMedRdvStatut(this.value)">
+          <option value="">Tous statuts</option>
+          <option>En attente</option>
+          <option>Confirmé</option>
+          <option>Annulé</option>
+        </select>
+      </div>
+      <div class="card"><div class="card-body" style="padding:0">
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>Date</th><th>Heure</th><th>Patient</th><th>Motif</th><th>Statut</th><th>Action</th></tr></thead>
+            <tbody id="med-rdv-body"></tbody>
+          </table>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- PATIENTS -->
+    <div id="pnl-patients" class="pnl">
+      <p class="ptitle">Mes Patients</p>
+      <div class="card"><div class="card-body" style="padding:0">
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>Nom</th><th>Naissance</th><th>Téléphone</th><th>Dernier RDV</th><th>Nb RDV</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Ahmed Ben Ali</strong></td><td>15/05/1990</td><td>+216 22 345 678</td><td>20/04/2026</td><td>5</td></tr>
+              <tr><td><strong>Sana Mrad</strong></td><td>08/11/1985</td><td>+216 55 678 901</td><td>20/04/2026</td><td>3</td></tr>
+              <tr><td><strong>Mohamed Trabelsi</strong></td><td>22/03/1975</td><td>+216 98 123 456</td><td>20/04/2026</td><td>8</td></tr>
+              <tr><td><strong>Leila Hamdi</strong></td><td>30/07/1992</td><td>+216 71 234 567</td><td>05/04/2026</td><td>2</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="nav.js"></script>
+<script src="state.js"></script>
+<script>
+renderNav('medecin');
+
+/* ── Sidebar ── */
+function sw(panel, el) {
+  document.querySelectorAll('.pnl').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('pnl-'+panel).classList.add('active');
+  el.classList.add('active');
+}
+
+/* ── RDV du jour ── */
+const RDV_DU_JOUR = [
+  { heure:'09:00', patient:'Ahmed Ben Ali',   motif:'Bilan cardiaque',  statut:'Confirmé' },
+  { heure:'10:00', patient:'Sana Mrad',        motif:'Suivi traitement', statut:'Confirmé' },
+  { heure:'11:00', patient:'M. Trabelsi',      motif:'Consultation',     statut:'En attente' },
+  { heure:'14:00', patient:'Leila Hamdi',      motif:'Résultats ECG',    statut:'Nouveau' },
+];
+
+function renderRdvJour() {
+  // Ajouter aussi les RDV pris via l'app
+  const state = getState();
+  const rdvApp = (state.rdvs||[])
+    .filter(r => r.docId === 2) // Dr Mansouri
+    .map(r => ({ heure: r.heure, patient: 'Nouveau patient', motif: r.motif, statut: r.statut }));
+
+  const all = [...RDV_DU_JOUR, ...rdvApp];
+  document.getElementById('rdv-jour-body').innerHTML = all.map(r => `
+    <tr>
+      <td>${r.heure}</td>
+      <td>${r.patient}</td>
+      <td>${r.motif}</td>
+      <td>${badgeStatut(r.statut)}</td>
+      <td>
+        ${r.statut==='En attente'
+          ? `<button class="btn btn-green btn-sm" onclick="confirmerRdvMed(this,'${r.patient}')">✓ Confirmer</button>`
+          : `<button class="btn btn-outline btn-sm">Voir</button>`}
+      </td>
+    </tr>`).join('');
+}
+
+function confirmerRdvMed(btn, patient) {
+  btn.closest('tr').querySelector('td:nth-child(4)').innerHTML = '<span class="badge b-green">✓ Confirmé</span>';
+  btn.outerHTML = '<button class="btn btn-outline btn-sm">Voir</button>';
+  showToast('✅ RDV de ' + patient + ' confirmé');
+}
+
+/* ── Créneaux ── */
+let creneaux = [
+  { jour:'Lundi',  debut:'09:00', fin:'12:00', duree:'30 min' },
+  { jour:'Mardi',  debut:'14:00', fin:'17:00', duree:'30 min' },
+  { jour:'Jeudi',  debut:'10:00', fin:'13:00', duree:'45 min' },
+];
+
+function renderCreneaux() {
+  document.getElementById('creneaux-body').innerHTML = creneaux.map((c,i) => `
+    <tr>
+      <td>${c.jour}</td>
+      <td>${c.debut} – ${c.fin}</td>
+      <td>${c.duree}</td>
+      <td><button class="btn btn-red btn-sm" onclick="delCreneau(${i})">✕</button></td>
+    </tr>`).join('');
+}
+
+function addCreneau() {
+  creneaux.push({
+    jour:  document.getElementById('cr-jour').value,
+    debut: document.getElementById('cr-debut').value,
+    fin:   document.getElementById('cr-fin').value,
+    duree: document.getElementById('cr-duree').value,
+  });
+  renderCreneaux();
+  showToast('✅ Créneau ajouté');
+}
+function delCreneau(i) { creneaux.splice(i,1); renderCreneaux(); showToast('🗑️ Créneau supprimé'); }
+
+/* ── RDV médecin ── */
+const MED_RDV = [
+  { date:'20/04', heure:'09:00', patient:'Ahmed Ben Ali', motif:'Bilan cardiaque', statut:'Confirmé' },
+  { date:'20/04', heure:'10:00', patient:'Sana Mrad',      motif:'Suivi',           statut:'Confirmé' },
+  { date:'20/04', heure:'11:00', patient:'M. Trabelsi',    motif:'Consultation',    statut:'En attente' },
+  { date:'28/04', heure:'14:30', patient:'Ahmed Ben Ali',  motif:'Bilan cardiaque', statut:'Nouveau' },
+];
+function renderMedRdv(list) {
+  document.getElementById('med-rdv-body').innerHTML = (list||MED_RDV).map(r => `
+    <tr>
+      <td>${r.date}</td><td>${r.heure}</td><td>${r.patient}</td>
+      <td>${r.motif}</td><td>${badgeStatut(r.statut)}</td>
+      <td><button class="btn btn-outline btn-sm">Détail</button></td>
+    </tr>`).join('');
+}
+function filterMedRdv(q) {
+  renderMedRdv(MED_RDV.filter(r => r.patient.toLowerCase().includes(q.toLowerCase())));
+}
+function filterMedRdvStatut(s) {
+  renderMedRdv(s ? MED_RDV.filter(r => r.statut===s) : MED_RDV);
+}
+
+function badgeStatut(s) {
+  if(s==='Confirmé')   return '<span class="badge b-green">✓ Confirmé</span>';
+  if(s==='En attente') return '<span class="badge b-orange">⏳ En attente</span>';
+  if(s==='Nouveau')    return '<span class="badge b-blue">🆕 Nouveau</span>';
+  return '<span class="badge b-grey">'+s+'</span>';
+}
+
+/* ── INIT ── */
+renderRdvJour();
+renderCreneaux();
+renderMedRdv();
+</script>
+</body>
+</html>

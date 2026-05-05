@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MediRendez – Administration</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="nav-placeholder"></div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-who">
+      <div style="width:38px;height:38px;border-radius:50%;background:#dc2626;color:#fff;font-weight:800;font-size:.75rem;display:flex;align-items:center;justify-content:center;margin-bottom:8px">AD</div>
+      <div class="sb-who-name">Administrateur</div>
+      <div class="sb-who-role">Accès complet</div>
+    </div>
+    <a class="sb-item active" onclick="sw('dashboard',this)">📊 Tableau de bord</a>
+    <a class="sb-item"        onclick="sw('users',this)">👥 Utilisateurs</a>
+    <a class="sb-item"        onclick="sw('medecins',this)">🩺 Médecins</a>
+    <a class="sb-item"        onclick="sw('allrdv',this)">📅 Tous les RDV</a>
+  </div>
+
+  <div class="sb-content">
+
+    <!-- DASHBOARD -->
+    <div id="pnl-dashboard" class="pnl active">
+      <p class="ptitle">Vue d'ensemble</p>
+      <p class="psub">Système de prise de rendez-vous médical</p>
+
+      <div class="stats4">
+        <div class="stat-box"><div class="stat-ico">👥</div><div><div class="stat-num" id="nb-patients">384</div><div class="stat-lbl">Patients inscrits</div></div></div>
+        <div class="stat-box"><div class="stat-ico">🩺</div><div><div class="stat-num">47</div><div class="stat-lbl">Médecins actifs</div></div></div>
+        <div class="stat-box"><div class="stat-ico">📅</div><div><div class="stat-num" id="nb-rdv">1 248</div><div class="stat-lbl">RDV ce mois</div></div></div>
+        <div class="stat-box"><div class="stat-ico">✗</div><div><div class="stat-num">12</div><div class="stat-lbl">Annulés</div></div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="card">
+          <div class="card-head">Activité récente</div>
+          <div class="card-body" style="padding:0" id="activity-list">
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">RDV par statut</div>
+          <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:12px" id="statut-stats"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UTILISATEURS -->
+    <div id="pnl-users" class="pnl">
+      <p class="ptitle">Gestion des Utilisateurs</p>
+      <div class="search-row">
+        <input type="text" placeholder="🔍 Rechercher…" oninput="filterUsers(this.value)">
+        <select onchange="filterUsersRole(this.value)">
+          <option value="">Tous rôles</option>
+          <option>Patient</option>
+          <option>Médecin</option>
+        </select>
+      </div>
+      <div class="card"><div class="card-body" style="padding:0">
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>Nom</th><th>Email</th><th>Rôle</th><th>Inscription</th><th>Statut</th><th>Actions</th></tr></thead>
+            <tbody id="users-body"></tbody>
+          </table>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- MÉDECINS ADMIN -->
+    <div id="pnl-medecins" class="pnl">
+      <div class="flex-bet">
+        <div><p class="ptitle">Gestion des Médecins</p></div>
+        <button class="btn btn-blue btn-sm" onclick="showAddMedForm()">+ Ajouter un médecin</button>
+      </div>
+
+      <div id="add-med-form" style="display:none" class="card">
+        <div class="card-head">Nouveau médecin</div>
+        <div class="card-body">
+          <div class="row2">
+            <div class="field"><label>Prénom</label><input type="text" id="nm-prenom" placeholder="Sarah"></div>
+            <div class="field"><label>Nom</label><input type="text" id="nm-nom" placeholder="Ben Ammar"></div>
+            <div class="field"><label>Spécialité</label><input type="text" id="nm-spec" placeholder="Cardiologie"></div>
+            <div class="field"><label>Cabinet</label><input type="text" id="nm-cab" placeholder="Cabinet Central, Tunis"></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn btn-blue btn-sm" onclick="addMedecin()">✓ Ajouter</button>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('add-med-form').style.display='none'">Annuler</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card"><div class="card-body" style="padding:0">
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>Médecin</th><th>Spécialité</th><th>Cabinet</th><th>RDV/mois</th><th>Statut</th><th>Actions</th></tr></thead>
+            <tbody id="med-admin-body"></tbody>
+          </table>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- TOUS RDV -->
+    <div id="pnl-allrdv" class="pnl">
+      <p class="ptitle">Supervision des Rendez-vous</p>
+      <div class="search-row">
+        <input type="text" placeholder="🔍 Patient ou médecin…">
+        <select id="filter-allrdv" onchange="filterAllRdv(this.value)">
+          <option value="">Tous statuts</option>
+          <option>En attente</option>
+          <option>Confirmé</option>
+          <option>Annulé</option>
+          <option>Nouveau</option>
+        </select>
+      </div>
+      <div class="card"><div class="card-body" style="padding:0">
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>ID</th><th>Patient</th><th>Médecin</th><th>Date</th><th>Heure</th><th>Motif</th><th>Statut</th></tr></thead>
+            <tbody id="allrdv-body"></tbody>
+          </table>
+        </div>
+      </div></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="nav.js"></script>
+<script src="state.js"></script>
+<script>
+renderNav('admin');
+
+function sw(panel, el) {
+  document.querySelectorAll('.pnl').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('pnl-'+panel).classList.add('active');
+  el.classList.add('active');
+}
+
+/* ── UTILISATEURS ── */
+let users = [
+  { nom:'Ahmed Ben Ali',      email:'ahmed@email.com',       role:'Patient',  date:'01/03/2026', statut:'Actif' },
+  { nom:'Sana Mrad',          email:'sana@email.com',        role:'Patient',  date:'05/03/2026', statut:'Actif' },
+  { nom:'Dr. K. Mansouri',    email:'k.mansouri@med.tn',     role:'Médecin',  date:'01/03/2026', statut:'Actif' },
+  { nom:'Mohamed Trabelsi',   email:'m.trabelsi@email.com',  role:'Patient',  date:'10/03/2026', statut:'Inactif' },
+];
+function renderUsers(list) {
+  document.getElementById('users-body').innerHTML = (list||users).map((u,i) => `
+    <tr>
+      <td><strong>${u.nom}</strong></td>
+      <td>${u.email}</td>
+      <td><span class="badge ${u.role==='Médecin'?'b-orange':'b-blue'}">${u.role}</span></td>
+      <td>${u.date}</td>
+      <td><span class="badge ${u.statut==='Actif'?'b-green':'b-red'}">${u.statut}</span></td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="toggleStatut(${i})">
+          ${u.statut==='Actif'?'🚫 Désactiver':'✅ Activer'}
+        </button>
+        <button class="btn btn-red btn-sm" style="margin-left:4px" onclick="delUser(${i})">✕</button>
+      </td>
+    </tr>`).join('');
+}
+function filterUsers(q) { renderUsers(users.filter(u=>u.nom.toLowerCase().includes(q.toLowerCase()))); }
+function filterUsersRole(r) { renderUsers(r ? users.filter(u=>u.role===r) : users); }
+function toggleStatut(i) { users[i].statut = users[i].statut==='Actif'?'Inactif':'Actif'; renderUsers(); showToast('✅ Statut mis à jour'); }
+function delUser(i) { if(confirm('Supprimer cet utilisateur ?')){ users.splice(i,1); renderUsers(); showToast('🗑️ Utilisateur supprimé'); } }
+
+/* ── MÉDECINS ADMIN ── */
+let medsAdmin = [
+  { nom:'Dr. Sarah Ben Ammar', spec:'Médecine générale', cab:'Cabinet Central, Tunis',    rdv:124, statut:'Actif' },
+  { nom:'Dr. Karim Mansouri',  spec:'Cardiologie',       cab:'Clinique du Cœur, Tunis',   rdv:98,  statut:'Actif' },
+  { nom:'Dr. Leila Trabelsi',  spec:'Dermatologie',      cab:'Centre Derma, Sfax',        rdv:76,  statut:'Actif' },
+  { nom:'Dr. Omar Belhadj',    spec:'Pédiatrie',         cab:'Clinique Enfants, Sousse',  rdv:45,  statut:'Révision' },
+];
+function renderMedsAdmin(list) {
+  document.getElementById('med-admin-body').innerHTML = (list||medsAdmin).map((m,i) => `
+    <tr>
+      <td><strong>${m.nom}</strong></td>
+      <td>${m.spec}</td>
+      <td>${m.cab}</td>
+      <td>${m.rdv}</td>
+      <td><span class="badge ${m.statut==='Actif'?'b-green':m.statut==='Révision'?'b-orange':'b-red'}">${m.statut}</span></td>
+      <td>
+        <button class="btn btn-outline btn-sm">✏️</button>
+        <button class="btn btn-red btn-sm" style="margin-left:4px" onclick="delMed(${i})">✕</button>
+      </td>
+    </tr>`).join('');
+}
+function showAddMedForm() { document.getElementById('add-med-form').style.display='block'; }
+function addMedecin() {
+  const p = document.getElementById('nm-prenom').value.trim();
+  const n = document.getElementById('nm-nom').value.trim();
+  const s = document.getElementById('nm-spec').value.trim();
+  const c = document.getElementById('nm-cab').value.trim();
+  if(!p||!n||!s) { showToast('⚠️ Remplissez les champs obligatoires'); return; }
+  medsAdmin.unshift({ nom:`Dr. ${p} ${n}`, spec:s, cab:c||'—', rdv:0, statut:'Actif' });
+  renderMedsAdmin();
+  document.getElementById('add-med-form').style.display='none';
+  showToast('✅ Médecin ajouté');
+}
+function delMed(i) { if(confirm('Supprimer ce médecin ?')){ medsAdmin.splice(i,1); renderMedsAdmin(); showToast('🗑️ Médecin supprimé'); } }
+
+/* ── TOUS RDV ── */
+const ALL_RDV_BASE = [
+  { id:'#1024', patient:'Ahmed Ben Ali', medecin:'Dr. Mansouri',  date:'20/04', heure:'09:00', motif:'Bilan cardiaque',  statut:'Confirmé' },
+  { id:'#1025', patient:'Sana Mrad',      medecin:'Dr. Ben Ammar', date:'20/04', heure:'10:00', motif:'Consultation',     statut:'Confirmé' },
+  { id:'#1026', patient:'M. Trabelsi',    medecin:'Dr. Mansouri',  date:'20/04', heure:'11:00', motif:'Suivi',            statut:'En attente' },
+  { id:'#1027', patient:'Leila Hamdi',    medecin:'Dr. Trabelsi',  date:'28/04', heure:'14:30', motif:'Résultats',        statut:'Nouveau' },
+  { id:'#1020', patient:'Omar Slim',      medecin:'Dr. Belhadj',   date:'18/04', heure:'09:30', motif:'Pédiatrie',        statut:'Annulé' },
+];
+function getAllRdv() {
+  const state = getState();
+  const rdvApp = (state.rdvs||[]).map((r,i) => ({
+    id: '#'+String(2000+i),
+    patient: state.prenom ? state.prenom+' '+(state.nom||'') : 'Nouveau Patient',
+    medecin: r.docNom||'—',
+    date: r.date,
+    heure: r.heure,
+    motif: r.motif,
+    statut: r.statut,
+  }));
+  return [...rdvApp, ...ALL_RDV_BASE];
+}
+function renderAllRdv(list) {
+  document.getElementById('allrdv-body').innerHTML = (list||getAllRdv()).map(r => `
+    <tr>
+      <td style="font-size:.78rem;color:#64748b">${r.id}</td>
+      <td>${r.patient}</td><td>${r.medecin}</td>
+      <td>${r.date}</td><td>${r.heure}</td><td>${r.motif}</td>
+      <td>${badgeStatut(r.statut)}</td>
+    </tr>`).join('');
+}
+function filterAllRdv(s) { renderAllRdv(s ? getAllRdv().filter(r=>r.statut===s) : getAllRdv()); }
+
+function badgeStatut(s) {
+  if(s==='Confirmé')   return '<span class="badge b-green">✓ Confirmé</span>';
+  if(s==='En attente') return '<span class="badge b-orange">⏳ En attente</span>';
+  if(s==='Nouveau')    return '<span class="badge b-blue">🆕 Nouveau</span>';
+  if(s==='Annulé')     return '<span class="badge b-red">✗ Annulé</span>';
+  return '<span class="badge b-grey">'+s+'</span>';
+}
+
+/* ── DASHBOARD stats ── */
+function renderDashboard() {
+  const all = getAllRdv();
+  const byStatut = {};
+  all.forEach(r => byStatut[r.statut] = (byStatut[r.statut]||0)+1);
+
+  document.getElementById('nb-rdv').textContent = all.length;
+
+  // Activité
+  const state = getState();
+  const activities = [];
+  if(state.rdvs && state.rdvs.length) {
+    activities.push(`📅 Nouveau RDV – ${state.rdvs[0].docNom}`);
+  }
+  activities.push('🟢 Connexion administrateur', '📅 RDV confirmé – Dr. Mansouri', '🩺 Médecin Dr. Belhadj en révision');
+  document.getElementById('activity-list').innerHTML =
+    activities.map(a => `<div style="padding:11px 16px;border-bottom:1px solid #f1f5f9;font-size:.84rem">${a}</div>`).join('');
+
+  // Stats statut
+  const items = [
+    { label:'Confirmés',  n: byStatut['Confirmé']||0,   cls:'b-green' },
+    { label:'En attente', n: byStatut['En attente']||0,  cls:'b-orange' },
+    { label:'Nouveaux',   n: byStatut['Nouveau']||0,     cls:'b-blue' },
+    { label:'Annulés',    n: byStatut['Annulé']||0,      cls:'b-red' },
+  ];
+  document.getElementById('statut-stats').innerHTML = items.map(s => `
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:.85rem">${s.label}</span>
+      <span class="badge ${s.cls}">${s.n}</span>
+    </div>`).join('');
+}
+
+/* ── INIT ── */
+renderUsers();
+renderMedsAdmin();
+renderAllRdv();
+renderDashboard();
+</script>
+</body>
+</html>

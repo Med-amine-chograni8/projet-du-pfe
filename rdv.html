@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MediRendez – Prendre RDV</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="nav-placeholder"></div>
+
+<div class="page">
+  <p class="ptitle">📅 Prendre un Rendez-vous</p>
+  <p class="psub">Suivez les étapes ci-dessous pour réserver votre consultation</p>
+
+  <!-- Barre de progression -->
+  <div style="display:flex;gap:0;margin-bottom:24px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0">
+    <div id="step1-bar" style="flex:1;padding:10px;text-align:center;font-size:.8rem;font-weight:700;background:#0ea5e9;color:#fff">① Médecin</div>
+    <div id="step2-bar" style="flex:1;padding:10px;text-align:center;font-size:.8rem;font-weight:700;background:#f1f5f9;color:#94a3b8;border-left:1px solid #e2e8f0">② Date</div>
+    <div id="step3-bar" style="flex:1;padding:10px;text-align:center;font-size:.8rem;font-weight:700;background:#f1f5f9;color:#94a3b8;border-left:1px solid #e2e8f0">③ Créneau</div>
+    <div id="step4-bar" style="flex:1;padding:10px;text-align:center;font-size:.8rem;font-weight:700;background:#f1f5f9;color:#94a3b8;border-left:1px solid #e2e8f0">④ Confirmation</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+
+    <!-- COLONNE GAUCHE -->
+    <div>
+      <!-- ÉTAPE 1 : Médecin -->
+      <div class="card">
+        <div class="card-head">① Choisir le médecin</div>
+        <div class="card-body">
+          <input type="text" id="doc-search" placeholder="🔍 Filtrer par nom…" oninput="filterDocList()" style="margin-bottom:10px">
+          <div id="doc-list" style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto"></div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 2 : Calendrier -->
+      <div class="card">
+        <div class="card-head">
+          ② Choisir la date
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="btn btn-outline btn-sm" onclick="prevM()">‹</button>
+            <span id="cal-lbl" style="font-size:.82rem;font-weight:700;white-space:nowrap"></span>
+            <button class="btn btn-outline btn-sm" onclick="nextM()">›</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="cal-grid" id="cal-names"></div>
+          <div class="cal-grid" id="cal-days"  style="margin-top:3px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLONNE DROITE -->
+    <div>
+      <!-- ÉTAPE 3 : Créneaux -->
+      <div class="card">
+        <div class="card-head">③ Choisir un créneau</div>
+        <div class="card-body">
+          <p id="cr-hint" style="font-size:.82rem;color:#64748b">← Sélectionnez une date d'abord</p>
+          <div class="cr-grid" id="cr-grid"></div>
+        </div>
+      </div>
+
+      <!-- ÉTAPE 4 : Confirmation -->
+      <div class="card">
+        <div class="card-head">④ Confirmer le rendez-vous</div>
+        <div class="card-body">
+          <div class="field">
+            <label>Motif de consultation</label>
+            <select id="motif">
+              <option>Consultation générale</option>
+              <option>Renouvellement ordonnance</option>
+              <option>Suivi de traitement</option>
+              <option>Résultats d'analyses</option>
+              <option>Urgence médicale</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Notes complémentaires (optionnel)</label>
+            <textarea id="notes" placeholder="Décrivez brièvement votre problème…"></textarea>
+          </div>
+
+          <!-- Récapitulatif -->
+          <div class="recap-box" id="recap">
+            <div>👨‍⚕️ <strong id="rc-doc">—</strong></div>
+            <div>📍 <strong id="rc-cab">—</strong></div>
+            <div>📅 <strong id="rc-date">—</strong></div>
+            <div>⏰ <strong id="rc-heure">—</strong></div>
+          </div>
+
+          <div id="confirm-msg"></div>
+          <button class="btn btn-blue btn-full" onclick="confirmer()">✓ Confirmer le rendez-vous</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="nav.js"></script>
+<script src="state.js"></script>
+<script>
+renderNav('rdv');
+
+/* ── état local ── */
+let selDocId  = null;
+let selDate   = null;   // numéro du jour
+let selHeure  = null;
+let calY = 2026, calM = 3; // Avril 2026 (0-indexed)
+
+/* ── Lire le paramètre ?doc=X dans l'URL ── */
+const urlParams = new URLSearchParams(window.location.search);
+const paramDoc  = urlParams.get('doc');
+if(paramDoc) selDocId = Number(paramDoc);
+
+/* ────────────────────────────
+   LISTE DES MÉDECINS
+──────────────────────────── */
+function renderDocList(list) {
+  document.getElementById('doc-list').innerHTML = list.map(d => {
+    const active = selDocId === d.id;
+    return `
+      <div onclick="pickDoc(${d.id})" style="
+        display:flex;align-items:center;gap:10px;
+        padding:9px 10px;border-radius:8px;cursor:pointer;
+        border:1.5px solid ${active?'#0ea5e9':'#e2e8f0'};
+        background:${active?'#f0f9ff':'transparent'};
+        transition:all .12s">
+        <div style="
+          width:34px;height:34px;border-radius:50%;
+          background:linear-gradient(135deg,#0ea5e9,#0369a1);
+          color:#fff;font-size:.75rem;font-weight:800;
+          display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          ${d.init}
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:.83rem">Dr. ${d.nom}</div>
+          <div style="font-size:.72rem;color:#0ea5e9">${d.spec}</div>
+        </div>
+        ${active ? '<span style="margin-left:auto;font-size:.75rem;color:#0ea5e9">✓</span>' : ''}
+      </div>`;
+  }).join('');
+}
+
+function filterDocList() {
+  const q = document.getElementById('doc-search').value.toLowerCase();
+  renderDocList(MEDECINS.filter(d =>
+    d.nom.toLowerCase().includes(q) || d.spec.toLowerCase().includes(q)
+  ));
+}
+
+function pickDoc(id) {
+  selDocId = id;
+  renderDocList(MEDECINS); // re-render avec nouveau sélectionné
+  updateRecap();
+  updateStepBar();
+  showToast('👨‍⚕️ Dr. ' + getMedecin(id).nom + ' sélectionné');
+}
+
+/* ────────────────────────────
+   CALENDRIER
+──────────────────────────── */
+function renderCal() {
+  document.getElementById('cal-lbl').textContent = MOIS_LONG[calM] + ' ' + calY;
+
+  // Noms des jours
+  const jours = ['L','M','M','J','V','S','D'];
+  document.getElementById('cal-names').innerHTML =
+    jours.map(j => `<div class="cal-dn">${j}</div>`).join('');
+
+  const firstDay  = new Date(calY, calM, 1).getDay();      // 0=dim
+  const totalDays = new Date(calY, calM + 1, 0).getDate();
+  const offset    = firstDay === 0 ? 6 : firstDay - 1;     // lundi = 0
+
+  // Date d'aujourd'hui pour bloquer le passé
+  const today = new Date(2026, 3, 20); // 20 avril 2026 (simulation)
+
+  let html = '';
+  for(let i = 0; i < offset; i++) html += `<div class="cal-d empty"></div>`;
+
+  for(let d = 1; d <= totalDays; d++) {
+    const dateObj = new Date(calY, calM, d);
+    const isPast  = dateObj < today;
+    const isToday = d === 20 && calM === 3 && calY === 2026;
+    const isSel   = selDate === d && calM === 3 && calY === 2026;
+
+    html += `<div class="cal-d ${isToday?'today':''} ${isPast&&!isToday?'past':''} ${isSel&&!isToday?'sel':''}"
+      onclick="${isPast && !isToday ? '' : `pickDate(${d})`}">${d}</div>`;
+  }
+  document.getElementById('cal-days').innerHTML = html;
+}
+
+function pickDate(d) {
+  selDate  = d;
+  selHeure = null;
+  document.getElementById('cr-hint').style.display = 'none';
+  document.getElementById('rc-date').textContent = d + ' ' + MOIS_COURT[calM] + ' ' + calY;
+  document.getElementById('rc-heure').textContent = '—';
+  renderCal();
+  renderCreneaux();
+  updateStepBar();
+  updateRecap();
+}
+
+function prevM() { calM--; if(calM<0){calM=11;calY--;} selDate=null; renderCal(); renderCreneaux(); }
+function nextM() { calM++; if(calM>11){calM=0;calY++;} selDate=null; renderCal(); renderCreneaux(); }
+
+/* ────────────────────────────
+   CRÉNEAUX
+──────────────────────────── */
+function renderCreneaux() {
+  const grid = document.getElementById('cr-grid');
+  if(!selDate) { grid.innerHTML=''; return; }
+
+  grid.innerHTML = HEURES.map((h, i) => {
+    const taken = PRIS_IDX.includes(i);
+    const sel   = selHeure === h;
+    return `<div class="cr ${taken?'taken':sel?'sel':''}"
+      onclick="${taken?'':''}" 
+      ${taken ? '' : `onclick="pickCreneau('${h}')"`}>
+      ${h}${taken ? '<br><small style="font-size:.65rem;opacity:.6">Pris</small>' : ''}
+    </div>`;
+  }).join('');
+}
+
+function pickCreneau(h) {
+  selHeure = h;
+  document.getElementById('rc-heure').textContent = h;
+  renderCreneaux();
+  updateStepBar();
+  updateRecap();
+  showToast('⏰ Créneau ' + h + ' sélectionné');
+}
+
+/* ────────────────────────────
+   RÉCAPITULATIF
+──────────────────────────── */
+function updateRecap() {
+  const doc = getMedecin(selDocId);
+  document.getElementById('rc-doc').textContent   = doc ? 'Dr. ' + doc.nom + ' — ' + doc.spec : '—';
+  document.getElementById('rc-cab').textContent   = doc ? doc.cab : '—';
+  if(!selDate)  document.getElementById('rc-date').textContent  = '—';
+  if(!selHeure) document.getElementById('rc-heure').textContent = '—';
+}
+
+/* ────────────────────────────
+   BARRE D'ÉTAPES
+──────────────────────────── */
+function updateStepBar() {
+  const steps = [
+    { id:'step1-bar', done: selDocId !== null },
+    { id:'step2-bar', done: selDate  !== null },
+    { id:'step3-bar', done: selHeure !== null },
+    { id:'step4-bar', done: false },
+  ];
+  steps.forEach((s, i) => {
+    const el = document.getElementById(s.id);
+    if(s.done || i === 0 && selDocId) {
+      el.style.background = '#0ea5e9'; el.style.color = '#fff';
+    } else {
+      el.style.background = '#f1f5f9'; el.style.color = '#94a3b8';
+    }
+  });
+}
+
+/* ────────────────────────────
+   CONFIRMER
+──────────────────────────── */
+function confirmer() {
+  const msgZone = document.getElementById('confirm-msg');
+
+  if(!selDocId) {
+    msgZone.innerHTML = '<div class="alert alert-warn" style="margin-bottom:10px">⚠️ Veuillez choisir un médecin.</div>';
+    return;
+  }
+  if(!selDate) {
+    msgZone.innerHTML = '<div class="alert alert-warn" style="margin-bottom:10px">⚠️ Veuillez choisir une date.</div>';
+    return;
+  }
+  if(!selHeure) {
+    msgZone.innerHTML = '<div class="alert alert-warn" style="margin-bottom:10px">⚠️ Veuillez choisir un créneau horaire.</div>';
+    return;
+  }
+
+  const doc    = getMedecin(selDocId);
+  const motif  = document.getElementById('motif').value;
+  const notes  = document.getElementById('notes').value;
+
+  // Créer le RDV et le sauvegarder
+  const state = getState();
+  const rdvs  = state.rdvs || [];
+
+  const newRdv = {
+    id:      Date.now(),
+    docId:   selDocId,
+    docNom:  'Dr. ' + doc.nom,
+    docSpec: doc.spec,
+    docCab:  doc.cab,
+    date:    selDate + ' ' + MOIS_COURT[calM] + ' ' + calY,
+    jour:    selDate,
+    mois:    MOIS_COURT[calM],
+    heure:   selHeure,
+    motif,
+    notes,
+    statut:  'En attente',   // ← TOUJOURS "En attente" à la création
+  };
+
+  rdvs.unshift(newRdv);
+  setState({ rdvs });
+
+  // Afficher succès et rediriger
+  msgZone.innerHTML = '<div class="alert alert-ok" style="margin-bottom:10px">✅ Rendez-vous enregistré ! Vous serez redirigé vers vos rendez-vous…</div>';
+  showToast('✅ RDV enregistré avec succès !');
+
+  // Marquer step4
+  document.getElementById('step4-bar').style.background = '#0ea5e9';
+  document.getElementById('step4-bar').style.color = '#fff';
+
+  setTimeout(() => window.location.href = 'mes_rdv.html', 1600);
+}
+
+/* ── INIT ── */
+renderDocList(MEDECINS);
+if(selDocId) updateRecap();
+renderCal();
+renderCreneaux();
+updateStepBar();
+</script>
+</body>
+</html>

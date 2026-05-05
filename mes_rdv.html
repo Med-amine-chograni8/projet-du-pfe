@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MediRendez – Mes Rendez-vous</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="nav-placeholder"></div>
+
+<div class="page">
+  <div class="flex-bet">
+    <div>
+      <p class="ptitle">📋 Mes Rendez-vous</p>
+      <p class="psub" id="welcome-msg">Bienvenue</p>
+    </div>
+    <a href="rdv.html" class="btn btn-blue">+ Nouveau RDV</a>
+  </div>
+
+  <div id="zone-alert"></div>
+
+  <!-- Onglets -->
+  <div style="display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:18px">
+    <button id="tab-upcoming" class="tab-btn active-tab" onclick="switchTab('upcoming')">À venir</button>
+    <button id="tab-past"     class="tab-btn"            onclick="switchTab('past')">Passés</button>
+    <button id="tab-profile"  class="tab-btn"            onclick="switchTab('profile')">Mon Profil</button>
+  </div>
+
+  <!-- Panel : À venir -->
+  <div id="panel-upcoming">
+    <div class="card">
+      <div class="card-body" id="list-upcoming">
+        <p style="color:#64748b;font-size:.88rem;text-align:center;padding:1rem">Aucun rendez-vous à venir.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel : Passés -->
+  <div id="panel-past" style="display:none">
+    <div class="card">
+      <div class="card-body" id="list-past">
+        <!-- rendez-vous passés statiques -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel : Profil -->
+  <div id="panel-profile" style="display:none">
+    <div style="display:flex;align-items:center;gap:14px;background:#1a2e44;border-radius:12px;padding:18px;color:#fff;margin-bottom:16px">
+      <div id="prof-avatar" style="width:52px;height:52px;border-radius:50%;background:#0ea5e9;color:#fff;font-size:1.3rem;font-weight:800;display:flex;align-items:center;justify-content:center">A</div>
+      <div><div id="prof-name" style="font-weight:800;font-size:1rem">Ahmed Ben Ali</div><div style="font-size:.78rem;opacity:.6;margin-top:2px">Patient</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head">Informations personnelles</div>
+      <div class="card-body">
+        <div class="row2">
+          <div class="field"><label>Prénom</label><input type="text" id="p-prenom" value="Ahmed"></div>
+          <div class="field"><label>Nom</label><input type="text" id="p-nom" value="Ben Ali"></div>
+          <div class="field"><label>Email</label><input type="email" id="p-email" value="ahmed@email.com"></div>
+          <div class="field"><label>Téléphone</label><input type="tel" id="p-tel" value="+216 22 345 678"></div>
+        </div>
+        <button class="btn btn-blue mt12" onclick="saveProfile()">💾 Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<style>
+.tab-btn {
+  background:none; border:none; padding:10px 18px;
+  font-family:'Nunito',sans-serif; font-size:.87rem; font-weight:700;
+  color:#64748b; cursor:pointer;
+  border-bottom:2px solid transparent; margin-bottom:-2px;
+  transition:all .15s;
+}
+.tab-btn:hover { color:#1a2e44; }
+.active-tab { color:#0ea5e9; border-bottom:2px solid #0ea5e9; }
+</style>
+
+<script src="nav.js"></script>
+<script src="state.js"></script>
+<script>
+renderNav('mes-rdv');
+
+const RDV_PASSES_STATIQUES = [
+  { id:-1, docNom:'Dr. Sarah Ben Ammar', docSpec:'Médecine générale', jour:'05', mois:'avr', heure:'09:00', motif:'Renouvellement ordonnance', statut:'Terminé' },
+  { id:-2, docNom:'Dr. Leila Trabelsi',  docSpec:'Dermatologie',       jour:'18', mois:'mar', heure:'11:30', motif:'Consultation dermatologique', statut:'Terminé' },
+];
+
+function renderRow(rdv, isPast) {
+  const colorBox = isPast ? '#64748b' : '#1a2e44';
+  const badge = isPast
+    ? '<span class="badge b-grey">Terminé</span>'
+    : rdv.statut === 'Confirmé'
+      ? '<span class="badge b-green">✓ Confirmé</span>'
+      : '<span class="badge b-orange">⏳ En attente</span>';
+
+  const actions = isPast ? '' : `
+    <div class="rdv-acts">
+      <button class="btn btn-outline btn-sm" onclick="modifierRdv(${rdv.id})">✏️ Modifier</button>
+      <button class="btn btn-red btn-sm"     onclick="annulerRdv(${rdv.id})">✕ Annuler</button>
+    </div>`;
+
+  return `
+    <div class="rdv-row" id="rdv-${rdv.id}">
+      <div class="rdv-box" style="background:${colorBox}">
+        <div class="dd">${rdv.jour}</div>
+        <div class="mm">${rdv.mois}</div>
+      </div>
+      <div class="rdv-info">
+        <div class="rdv-title">${rdv.docNom} — ${rdv.docSpec}</div>
+        <div class="rdv-meta">⏰ ${rdv.heure} · 🏥 ${rdv.motif||''}</div>
+        ${actions}
+      </div>
+      ${badge}
+    </div>`;
+}
+
+function renderUpcoming() {
+  const state = getState();
+  const rdvs  = state.rdvs || [];
+  const el    = document.getElementById('list-upcoming');
+  const tab   = document.getElementById('tab-upcoming');
+
+  if(!rdvs.length) {
+    el.innerHTML = `
+      <div style="text-align:center;padding:2rem;color:#64748b">
+        <div style="font-size:2.5rem;margin-bottom:10px">📭</div>
+        <div style="font-weight:700;margin-bottom:6px">Aucun rendez-vous à venir</div>
+        <a href="rdv.html" class="btn btn-blue btn-sm">📅 Prendre un RDV</a>
+      </div>`;
+    tab.textContent = 'À venir (0)';
+    return;
+  }
+
+  tab.textContent = `À venir (${rdvs.length})`;
+  el.innerHTML = rdvs.map(r => renderRow(r, false)).join('');
+
+  // Alerte pour le prochain RDV
+  const first = rdvs[0];
+  document.getElementById('zone-alert').innerHTML =
+    `<div class="alert alert-info">📬 Prochain RDV : <strong>${first.docNom}</strong> le <strong>${first.date}</strong> à <strong>${first.heure}</strong></div>`;
+}
+
+function renderPast() {
+  document.getElementById('list-past').innerHTML =
+    RDV_PASSES_STATIQUES.map(r => renderRow(r, true)).join('');
+}
+
+function annulerRdv(id) {
+  if(!confirm('Êtes-vous sûr de vouloir annuler ce rendez-vous ?')) return;
+  const state = getState();
+  state.rdvs  = (state.rdvs || []).filter(r => r.id !== id);
+  setState(state);
+  document.getElementById('rdv-'+id)?.remove();
+  renderUpcoming();
+  showToast('❌ Rendez-vous annulé');
+}
+
+function modifierRdv(id) {
+  // Pré-remplir le formulaire RDV avec le médecin déjà choisi
+  const state = getState();
+  const rdv   = (state.rdvs||[]).find(r => r.id === id);
+  if(rdv) setState({ editRdvId: id, editDocId: rdv.docId });
+  window.location.href = 'rdv.html?doc=' + (rdv ? rdv.docId : '');
+}
+
+function switchTab(tab) {
+  ['upcoming','past','profile'].forEach(t => {
+    document.getElementById('panel-'+t).style.display = t===tab ? 'block' : 'none';
+    document.getElementById('tab-'+t).classList.toggle('active-tab', t===tab);
+  });
+}
+
+function saveProfile() {
+  showToast('✅ Profil mis à jour');
+}
+
+/* ── Préremplir le profil depuis l'état ── */
+function initProfile() {
+  const state = getState();
+  if(state.prenom) {
+    document.getElementById('p-prenom').value = state.prenom;
+    document.getElementById('p-nom').value    = state.nom || '';
+    document.getElementById('p-email').value  = state.email || '';
+    document.getElementById('prof-name').textContent = state.prenom + ' ' + (state.nom||'');
+    document.getElementById('prof-avatar').textContent = state.prenom[0].toUpperCase();
+    document.getElementById('welcome-msg').textContent = 'Bienvenue, ' + state.prenom + ' ' + (state.nom||'');
+  }
+}
+
+/* ── INIT ── */
+renderUpcoming();
+renderPast();
+initProfile();
+</script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MediRendez – Inscription</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="nav-placeholder"></div>
+
+<div class="auth-wrap">
+  <div class="auth-box" style="max-width:480px">
+    <div class="auth-title">📝 Inscription</div>
+    <p class="auth-sub">Créez votre compte patient gratuit</p>
+
+    <div id="msg-zone"></div>
+
+    <div class="row2">
+      <div class="field"><label>Prénom *</label><input type="text" id="r-prenom" placeholder="Ahmed"></div>
+      <div class="field"><label>Nom *</label><input type="text" id="r-nom" placeholder="Ben Ali"></div>
+    </div>
+    <div class="field"><label>Email *</label><input type="email" id="r-email" placeholder="ahmed@email.com"></div>
+    <div class="field"><label>Téléphone</label><input type="tel" id="r-tel" placeholder="+216 XX XXX XXX"></div>
+    <div class="row2">
+      <div class="field"><label>Date de naissance</label><input type="date" id="r-dob"></div>
+      <div class="field"><label>Groupe sanguin</label>
+        <select id="r-blood"><option value="">—</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option></select>
+      </div>
+    </div>
+    <div class="field"><label>Mot de passe *</label><input type="password" id="r-pwd" placeholder="••••••••"></div>
+    <div class="field"><label>Confirmer le mot de passe *</label><input type="password" id="r-pwd2" placeholder="••••••••"></div>
+
+    <button class="btn btn-blue btn-full mt12" onclick="doRegister()">✓ Créer mon compte</button>
+    <p style="text-align:center;font-size:.82rem;color:#64748b;margin-top:12px">
+      Déjà inscrit ? <a href="connexion.html" style="color:#0ea5e9;font-weight:700">Se connecter</a>
+    </p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="nav.js"></script>
+<script src="state.js"></script>
+<script>
+renderNav('inscription');
+
+function doRegister() {
+  const prenom = document.getElementById('r-prenom').value.trim();
+  const nom    = document.getElementById('r-nom').value.trim();
+  const email  = document.getElementById('r-email').value.trim();
+  const pwd    = document.getElementById('r-pwd').value;
+  const pwd2   = document.getElementById('r-pwd2').value;
+  const zone   = document.getElementById('msg-zone');
+
+  if(!prenom || !nom || !email || !pwd) {
+    zone.innerHTML = '<div class="alert alert-warn">⚠️ Veuillez remplir tous les champs obligatoires (*).</div>';
+    return;
+  }
+  if(pwd !== pwd2) {
+    zone.innerHTML = '<div class="alert alert-warn">⚠️ Les mots de passe ne correspondent pas.</div>';
+    return;
+  }
+  if(pwd.length < 6) {
+    zone.innerHTML = '<div class="alert alert-warn">⚠️ Le mot de passe doit contenir au moins 6 caractères.</div>';
+    return;
+  }
+
+  setState({ loggedIn: true, role: 'patient', prenom, nom, email });
+  zone.innerHTML = `<div class="alert alert-ok">✅ Compte créé avec succès ! Bienvenue, ${prenom} !</div>`;
+  showToast('✅ Inscription réussie !');
+  setTimeout(() => window.location.href = 'mes_rdv.html', 1200);
+}
+</script>
+</body>
+</html>

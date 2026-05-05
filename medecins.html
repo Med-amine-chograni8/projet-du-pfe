@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MediRendez – Médecins</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="nav-placeholder"></div>
+
+<div class="page">
+  <p class="ptitle">Nos Médecins</p>
+  <p class="psub">Trouvez votre spécialiste et prenez rendez-vous en ligne</p>
+
+  <div class="search-row">
+    <input type="text" id="search-inp" placeholder="🔍 Rechercher par nom ou spécialité…" oninput="filterDocs()">
+    <select id="filter-spec" onchange="filterDocs()">
+      <option value="">Toutes spécialités</option>
+      <option>Médecine générale</option>
+      <option>Cardiologie</option>
+      <option>Dermatologie</option>
+      <option>Pédiatrie</option>
+      <option>Ophtalmologie</option>
+    </select>
+  </div>
+
+  <div class="doc-grid" id="doc-grid"></div>
+  <p id="no-result" style="display:none;text-align:center;color:#64748b;padding:2rem">Aucun médecin trouvé.</p>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="nav.js"></script>
+<script src="state.js"></script>
+<script>
+renderNav('medecins');
+
+function renderDocs(list) {
+  const grid = document.getElementById('doc-grid');
+  const noR  = document.getElementById('no-result');
+  if(!list.length) { grid.innerHTML=''; noR.style.display='block'; return; }
+  noR.style.display='none';
+  grid.innerHTML = list.map(d => `
+    <div class="doc-card">
+      <div class="doc-av">${d.init}</div>
+      <div class="doc-name">Dr. ${d.nom}</div>
+      <div class="doc-spec">${d.spec}</div>
+      <div class="doc-loc">📍 ${d.cab}</div>
+      <div style="font-size:.75rem;color:#16a34a;margin-top:4px;font-weight:600">🟢 ${d.dispo}</div>
+      <a href="rdv.html?doc=${d.id}" class="btn btn-blue btn-sm" style="margin-top:12px;width:100%;justify-content:center">
+        📅 Prendre RDV
+      </a>
+    </div>
+  `).join('');
+}
+
+function filterDocs() {
+  const q    = document.getElementById('search-inp').value.toLowerCase();
+  const spec = document.getElementById('filter-spec').value;
+  const res  = MEDECINS.filter(d => {
+    const matchQ    = !q || d.nom.toLowerCase().includes(q) || d.spec.toLowerCase().includes(q);
+    const matchSpec = !spec || d.spec === spec;
+    return matchQ && matchSpec;
+  });
+  renderDocs(res);
+}
+
+renderDocs(MEDECINS);
+</script>
+</body>
+</html>

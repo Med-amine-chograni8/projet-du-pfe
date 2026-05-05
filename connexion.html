@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MediRendez – Connexion</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="nav-placeholder"></div>
+
+<div class="auth-wrap">
+  <div class="auth-box">
+    <div class="auth-title">🔐 Connexion</div>
+    <p class="auth-sub">Accédez à votre espace personnel</p>
+
+    <!-- Sélecteur de rôle -->
+    <div style="display:flex;gap:8px;margin-bottom:16px" id="role-btns">
+      <button class="btn btn-sm" id="rb-patient" onclick="selectRole('patient')" style="flex:1;background:#e0f2fe;color:#0284c7;border:1.5px solid #0ea5e9">Patient</button>
+      <button class="btn btn-sm btn-outline" id="rb-medecin" onclick="selectRole('medecin')" style="flex:1">Médecin</button>
+      <button class="btn btn-sm btn-outline" id="rb-admin"   onclick="selectRole('admin')"   style="flex:1">Admin</button>
+    </div>
+
+    <div id="msg-zone"></div>
+
+    <div class="field"><label>Email</label><input type="email" id="inp-email" placeholder="votre@email.com"></div>
+    <div class="field"><label>Mot de passe</label><input type="password" id="inp-pwd" placeholder="••••••••"></div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:.8rem;margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;color:#64748b"><input type="checkbox" style="width:auto"> Se souvenir de moi</label>
+      <a href="#" style="color:#0ea5e9;font-weight:600">Mot de passe oublié ?</a>
+    </div>
+
+    <button class="btn btn-blue btn-full" onclick="doLogin()">→ Se connecter</button>
+    <p style="text-align:center;font-size:.82rem;color:#64748b;margin-top:12px">
+      Pas de compte ? <a href="inscription.html" style="color:#0ea5e9;font-weight:700">S'inscrire</a>
+    </p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="nav.js"></script>
+<script src="state.js"></script>
+<script>
+renderNav('connexion');
+
+let role = 'patient';
+
+function selectRole(r) {
+  role = r;
+  ['patient','medecin','admin'].forEach(x => {
+    const b = document.getElementById('rb-'+x);
+    if(x === r) {
+      b.style.background = '#e0f2fe'; b.style.color = '#0284c7'; b.style.border = '1.5px solid #0ea5e9';
+    } else {
+      b.style.background = '#fff'; b.style.color = '#64748b'; b.style.border = '1.5px solid #e2e8f0';
+    }
+  });
+}
+
+function doLogin() {
+  const email = document.getElementById('inp-email').value.trim();
+  const pwd   = document.getElementById('inp-pwd').value;
+  const zone  = document.getElementById('msg-zone');
+
+  if(!email || !pwd) {
+    zone.innerHTML = '<div class="alert alert-warn">⚠️ Veuillez remplir tous les champs.</div>';
+    return;
+  }
+
+  // Simulation login
+  setState({ loggedIn: true, role, email });
+  showToast('✅ Connexion réussie ! Redirection…');
+
+  setTimeout(() => {
+    if(role === 'medecin') window.location.href = 'espace_medecin.html';
+    else if(role === 'admin') window.location.href = 'admin.html';
+    else window.location.href = 'mes_rdv.html';
+  }, 900);
+}
+</script>
+</body>
+</html>
