@@ -32,14 +32,11 @@ L'objectif est de digitaliser le processus de prise de rendez-vous médical afin
 2. Ouvrir le fichier `index.html`
 3. Naviguer dans l'application
 
-## 📷 Captures d'écran
-
-(Ajoutez ici des images de votre projet)
-
 ## 👨‍💻 Auteur
 
-* Amine Chograni
-
+* Med Amine Chograni
+* Yousef soudani
+* Skander zamel
 ## 📅 Année
 
 2025 - 2026
